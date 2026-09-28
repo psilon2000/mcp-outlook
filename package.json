@@ -1,0 +1,28 @@
+{
+  "name": "mcp-outlook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local, scoped MCP access to Outlook Web App",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "calibrate": "npm run build && node dist/calibrate.js",
+    "pretest": "npm run build",
+    "test": "vitest run --maxWorkers=1 --testTimeout=15000 --hookTimeout=60000"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "luxon": "^3.7.2",
+    "playwright": "^1.55.0",
+    "rrule": "^2.8.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.7"
+  }
+}
