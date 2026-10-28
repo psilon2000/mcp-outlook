@@ -18,11 +18,16 @@ class EwsMcpTests(unittest.IsolatedAsyncioTestCase):
         async with stdio_client(parameters) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                names = {tool.name for tool in (await session.list_tools()).tools}
+                tools = {tool.name: tool for tool in (await session.list_tools()).tools}
+                names = set(tools)
                 self.assertIn("ews_list_mail", names)
                 self.assertIn("ews_calendar_events", names)
                 self.assertIn("ews_preview_event", names)
                 self.assertIn("ews_create_event", names)
+                self.assertNotIn("at most 25", tools["ews_list_mail"].description)
+                mail = await session.call_tool("ews_list_mail", {"limit": 1000})
+                mail_outcome = mail.structuredContent or json.loads(mail.content[0].text)
+                self.assertEqual(mail_outcome["code"], "credential_file_invalid")
                 spec = {"subject": "Fixture", "start": "2026-10-01T10:00:00+03:00",
                         "end": "2026-10-01T11:00:00+03:00", "time_zone": "Europe/Moscow"}
                 preview = await session.call_tool("ews_preview_event", {"event": spec})

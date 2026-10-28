@@ -92,7 +92,7 @@ export class BrowserSession {
     const page = await this.ready();
     const ui = this.ui?.mail;
     guard(ui?.safeToList, "mail_listing_not_verified_safe");
-    guard(folder.length > 0 && folder.length <= 100 && limit >= 1 && limit <= 25, "invalid_mail_query");
+    guard(folder.length > 0 && folder.length <= 100 && Number.isInteger(limit) && limit >= 1, "invalid_mail_query");
     this.mails.clear();
     await page.goto(`${BASE}${ui.route}`, { waitUntil: "domcontentloaded" });
     await one(page.locator(ui.viewReady));

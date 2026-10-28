@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 from exchangelib import Attendee, Build, CalendarItem, EWSTimeZone, Mailbox, Version
@@ -117,6 +117,36 @@ class ContractTests(unittest.TestCase):
             with self.assertRaisesRegex(InputError, "event_write_already_attempted"):
                 backend.create_event(second["preview_id"], lambda _: True)
             self.assertEqual(item_cls.return_value.save.call_count, 1)
+
+    def test_mail_listing_has_no_fixed_upper_limit(self):
+        messages = [SimpleNamespace(id=f"synthetic-{i}", subject=f"Message {i}",
+            datetime_received=datetime(2026, 10, 1, tzinfo=timezone.utc), sender=None) for i in range(40)]
+        query = MagicMock()
+        query.order_by.return_value = query
+        query.only.return_value = query
+        query.__getitem__.side_effect = messages.__getitem__
+        folder = MagicMock()
+        folder.all.return_value = query
+        folder.filter.return_value = query
+        backend = EwsBackend("unused-test-file")
+        backend._account = SimpleNamespace(primary_smtp_address="owner@example.test", inbox=folder)
+        for limit in (26, 100, 1000):
+            with self.subTest(limit=limit):
+                result = backend.list_mail("inbox", limit)
+                self.assertEqual(len(result["messages"]), min(limit, len(messages)))
+                self.assertEqual(len(backend._messages), len(result["messages"]))
+                self.assertEqual(result["messages"][-1]["subject"], f"Message {min(limit, len(messages)) - 1}")
+                query.__getitem__.assert_called_with(slice(None, limit))
+        result = backend.list_mail("inbox", 100, subject_query="Message")
+        folder.filter.assert_called_once_with(subject__icontains="Message")
+        self.assertEqual(len(result["messages"]), 40)
+
+    def test_mail_listing_requires_a_positive_integer_limit(self):
+        backend = EwsBackend("unused-test-file")
+        for limit in (0, -1, 1.5, True, "100", None):
+            with self.subTest(limit=limit):
+                with self.assertRaisesRegex(InputError, "invalid_mail_query"):
+                    backend.list_mail("inbox", limit)
 
     def test_sent_and_drafts_return_the_fetched_date_in_recent_first_order(self):
         class FakeQuery:

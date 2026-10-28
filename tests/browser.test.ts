@@ -69,6 +69,32 @@ describe("synthetic OWA UI", () => {
     await expect(session.readMail(items[0].id, 100)).rejects.toThrow("mail_selection_expired");
   });
 
+  it("lists more than 25 loaded messages and respects the requested limit", async () => {
+    await page.locator("#messages").evaluate((list) => {
+      const template = list.querySelector(".row")!;
+      for (let i = 2; i <= 40; i++) {
+        const row = template.cloneNode(true) as HTMLElement;
+        row.dataset.id = `message-${i}`;
+        row.querySelector(".subject")!.textContent = `Message ${i}`;
+        list.append(row);
+      }
+    });
+    const limited = await session.listMail("Inbox", 26);
+    expect(limited).toHaveLength(26);
+    expect(limited[25].subject).toBe("Message 26");
+    const all = await session.listMail("Inbox", 1000);
+    expect(all).toHaveLength(40);
+    expect(all[39].subject).toBe("Message 40");
+    expect(new Set(all.map((item) => item.id)).size).toBe(40);
+    expect(all.every((item) => item.unread === "true")).toBe(true);
+  });
+
+  it("requires a positive integer mail limit", async () => {
+    for (const limit of [0, -1, 1.5, NaN, Infinity]) {
+      await expect(session.listMail("Inbox", limit)).rejects.toThrow("invalid_mail_query");
+    }
+  });
+
   it("rejects a substring folder match instead of silently showing the wrong mailbox", async () => {
     await expect(session.listMail("Projects", 10)).rejects.toThrow("mail_folder_not_found_or_ambiguous");
   });

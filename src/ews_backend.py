@@ -302,7 +302,7 @@ class EwsBackend:
         return self._shared[address]
 
     def list_mail(self, folder: str, limit: int, subject_query: str | None = None) -> dict:
-        if folder not in ("inbox", "sent", "drafts") or not 1 <= limit <= 25 or subject_query and len(subject_query) > 120:
+        if folder not in ("inbox", "sent", "drafts") or type(limit) is not int or limit < 1 or subject_query and len(subject_query) > 120:
             raise InputError("invalid_mail_query")
         self._messages.clear()
         account = self.account

@@ -78,7 +78,7 @@ def ews_status() -> dict:
     return safe(lambda: {"mail": backend.account.inbox is not None, "calendar": backend.account.calendar is not None})
 
 
-@mcp.tool(description="List at most 25 own email metadata entries from inbox, sent or drafts; no read flag is changed")
+@mcp.tool(description="List own email metadata entries from inbox, sent or drafts; limit is a positive integer with no fixed upper bound (default 10); no read flag is changed")
 def ews_list_mail(folder: str = "inbox", limit: int = 10, subject_query: str | None = None) -> dict:
     return safe(lambda: backend.list_mail(folder, limit, subject_query))
 

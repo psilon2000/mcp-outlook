@@ -39,4 +39,13 @@ describe("MCP without real account or UI map", () => {
     const denied = await client.callTool({ name: "create_event", arguments: { previewId } });
     expect(denied.structuredContent).toMatchObject({ ok: false, code: "data_access_not_configured" });
   });
+
+  it("accepts mail limits above 25 without bypassing access permissions", async () => {
+    const tools = await client.listTools();
+    const limit = tools.tools.find((tool) => tool.name === "list_mail")!.inputSchema.properties!.limit;
+    expect(limit).toMatchObject({ type: "integer", minimum: 1, default: 10 });
+    expect(limit).not.toHaveProperty("maximum");
+    const denied = await client.callTool({ name: "list_mail", arguments: { folder: "Inbox", limit: 1000 } });
+    expect(denied.structuredContent).toMatchObject({ ok: false, code: "data_access_not_configured" });
+  });
 });

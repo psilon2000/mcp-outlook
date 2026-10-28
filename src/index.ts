@@ -56,8 +56,8 @@ server.registerTool("start_session", { description: "Open an isolated visible OW
 server.registerTool("session_status", { description: "Check whether the user has logged into the OWA window (no mailbox contents)" }, async () => run(() => session.status()));
 server.registerTool("close_session", { description: "Close the OWA browser and discard previews and session cookies" }, async () => run(() => session.close()));
 server.registerTool("list_mail", {
-  description: "List a bounded set of message metadata only after safe reading-pane behavior has been verified",
-  inputSchema: { folder: z.string().min(1), limit: z.number().int().min(1).max(25).default(10), query: z.string().max(200).optional() },
+  description: "List the requested number of message metadata entries only after safe reading-pane behavior has been verified; no fixed upper limit",
+  inputSchema: { folder: z.string().min(1), limit: z.number().int().min(1).default(10), query: z.string().max(200).optional() },
 }, async (input) => run(() => { allowed("OWA_ALLOW_MAIL_METADATA"); return session.listMail(input.folder, input.limit, input.query); }));
 server.registerTool("read_mail", {
   description: "Read a selected message body (may mark it read); only when the operator has configured body access and read receipt behavior",
